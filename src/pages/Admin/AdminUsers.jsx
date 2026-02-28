@@ -1,12 +1,26 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Shield, User, Search, AlertTriangle } from 'lucide-react';
-import { collection, updateDoc, doc, getDocs, orderBy, query, serverTimestamp } from 'firebase/firestore';
-import { db } from '../../lib/firebase';
+import { Users, Shield, User, Search, AlertTriangle, Plus, X } from 'lucide-react';
+import { collection, updateDoc, doc, setDoc, getDocs, orderBy, query, serverTimestamp } from 'firebase/firestore';
+import { initializeApp } from 'firebase/app';
+import { getAuth, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
+import { db, firebaseConfig } from '../../lib/firebase';
 
 const AdminUsers = () => {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+
+    // Modal state
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [loadingCreate, setLoadingCreate] = useState(false);
+    const [errorCreate, setErrorCreate] = useState('');
+    const [successCreate, setSuccessCreate] = useState('');
+    const [formData, setFormData] = useState({
+        name: '',
+        email: '',
+        password: '',
+        role: 'alumno'
+    });
 
     const fetchUsers = async () => {
         setLoading(true);
@@ -39,6 +53,58 @@ const AdminUsers = () => {
         }
     };
 
+    const handleCreateUser = async (e) => {
+        e.preventDefault();
+        setErrorCreate('');
+        setSuccessCreate('');
+        setLoadingCreate(true);
+
+        try {
+            // 1. Initialize a secondary Firebase app
+            const secondaryApp = initializeApp(firebaseConfig, 'SecondaryApp');
+            const secondaryAuth = getAuth(secondaryApp);
+
+            // 2. Create the user in Firebase Auth
+            const userCredential = await createUserWithEmailAndPassword(
+                secondaryAuth,
+                formData.email,
+                formData.password
+            );
+
+            // 3. Create the user profile in Firestore
+            await setDoc(doc(db, 'users', userCredential.user.uid), {
+                name: formData.name,
+                email: formData.email,
+                role: formData.role,
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp()
+            });
+
+            // 4. Sign out the secondary app and clean it up
+            await signOut(secondaryAuth);
+
+            setSuccessCreate('Usuario creado exitosamente.');
+            setTimeout(() => {
+                setIsModalOpen(false);
+                setFormData({ name: '', email: '', password: '', role: 'alumno' });
+                fetchUsers();
+                setSuccessCreate('');
+            }, 1000);
+
+        } catch (err) {
+            console.error("Error creando usuario:", err);
+            if (err.code === 'auth/email-already-in-use') {
+                setErrorCreate('El correo electrónico ya está en uso.');
+            } else if (err.code === 'auth/weak-password') {
+                setErrorCreate('La contraseña debe tener al menos 6 caracteres.');
+            } else {
+                setErrorCreate('Error al crear el usuario: ' + err.message);
+            }
+        } finally {
+            setLoadingCreate(false);
+        }
+    };
+
     const filteredUsers = users.filter(u =>
         u.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         u.email?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -51,14 +117,19 @@ const AdminUsers = () => {
                     <h1>Gestión de Usuarios</h1>
                     <p>Administra los permisos y roles de los integrantes de ADDA.</p>
                 </div>
-                <div className="search-box">
-                    <Search size={18} />
-                    <input
-                        type="text"
-                        placeholder="Buscar por nombre o email..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
+                <div className="flex items-center gap-4">
+                    <div className="search-box">
+                        <Search size={18} />
+                        <input
+                            type="text"
+                            placeholder="Buscar por nombre o email..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+                    <button className="btn btn-primary" onClick={() => setIsModalOpen(true)}>
+                        <Plus size={20} /> Nuevo Usuario
+                    </button>
                 </div>
             </header>
 
@@ -114,6 +185,89 @@ const AdminUsers = () => {
                 <AlertTriangle size={20} />
                 <p>Ten cuidado al asignar el rol de <strong>Administrador</strong>. Estos usuarios tendrán acceso total a la plataforma.</p>
             </div>
+
+            {isModalOpen && (
+                <div className="modal-overlay">
+                    <div className="modal-content card animate-fade-in">
+                        <div className="modal-header">
+                            <h2>Crear Nuevo Usuario</h2>
+                            <button onClick={() => {
+                                setIsModalOpen(false);
+                                setErrorCreate('');
+                                setSuccessCreate('');
+                                setFormData({ name: '', email: '', password: '', role: 'alumno' });
+                            }}><X size={24} /></button>
+                        </div>
+                        {errorCreate && (
+                            <div className="error-banner">
+                                <AlertTriangle size={18} />
+                                <span>{errorCreate}</span>
+                            </div>
+                        )}
+                        {successCreate && (
+                            <div className="error-banner" style={{ backgroundColor: '#dcfce7', color: '#166534', borderColor: '#bbf7d0' }}>
+                                <span>{successCreate}</span>
+                            </div>
+                        )}
+                        <form onSubmit={handleCreateUser} className="modal-form">
+                            <div className="input-group">
+                                <label>Nombre Completo *</label>
+                                <input
+                                    type="text"
+                                    className="input-field"
+                                    value={formData.name}
+                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                    required
+                                />
+                            </div>
+                            <div className="input-group">
+                                <label>Correo Electrónico *</label>
+                                <input
+                                    type="email"
+                                    className="input-field"
+                                    value={formData.email}
+                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                    required
+                                />
+                            </div>
+                            <div className="input-group">
+                                <label>Contraseña temporal *</label>
+                                <input
+                                    type="password"
+                                    className="input-field"
+                                    value={formData.password}
+                                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                    required
+                                    minLength="6"
+                                    placeholder="Mínimo 6 caracteres"
+                                />
+                            </div>
+                            <div className="input-group">
+                                <label>Rol Inicial *</label>
+                                <select
+                                    className="input-field"
+                                    value={formData.role}
+                                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                                >
+                                    <option value="alumno">Alumno</option>
+                                    <option value="admin">Administrador</option>
+                                </select>
+                            </div>
+                            <div className="modal-actions mt-4">
+                                <button type="button" className="btn btn-secondary" onClick={() => {
+                                    setIsModalOpen(false);
+                                    setErrorCreate('');
+                                    setSuccessCreate('');
+                                    setFormData({ name: '', email: '', password: '', role: 'alumno' });
+                                }}>Cancelar</button>
+                                <button type="submit" className="btn btn-primary" disabled={loadingCreate}>
+                                    {loadingCreate ? 'Creando...' : 'Crear Usuario'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
