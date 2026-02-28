@@ -8,20 +8,20 @@ export const ProtectedRoute = ({ children, adminOnly = false }) => {
     if (loading) {
         return (
             <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-secondary)' }}>
-                <p style={{ color: var(--accent-magenta), fontWeight: 600 }}>Cargando portal...</p>
-      </div >
-    );
-  }
+                <p style={{ color: 'var(--accent-magenta)', fontWeight: 600 }}>Cargando portal...</p>
+            </div >
+        );
+    }
 
-if (!user) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
-}
+    if (!user) {
+        return <Navigate to="/login" state={{ from: location }} replace />;
+    }
 
-if (adminOnly && !isAdmin) {
-    return <Navigate to="/dashboard" replace />;
-}
+    if (adminOnly && !isAdmin) {
+        return <Navigate to="/dashboard" replace />;
+    }
 
-return children;
+    return children;
 };
 
 export const PublicRoute = ({ children }) => {
