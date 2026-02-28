@@ -40,8 +40,7 @@ const Login = () => {
     <div className="login-page">
       <div className="login-card animate-fade-in">
         <div className="login-header">
-          <div className="login-logo">A</div>
-          <h1>ADDA Portal</h1>
+          <img src="/intranet.png" alt="ADDA Portal" className="login-logo" />
           <p>Bienvenido a tu intranet académica</p>
         </div>
 

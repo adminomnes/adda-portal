@@ -250,27 +250,28 @@ tr:last-child td {
 .logo-container {
   display: flex;
   align-items: center;
-  gap: 12px;
-}
-
-.logo-icon {
-  width: 32px;
-  height: 32px;
-  background-color: var(--accent-magenta);
-  color: white;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
   justify-content: center;
-  font-weight: 700;
-  font-family: 'Outfit';
+  width: 100%;
 }
 
-.logo-text {
-  font-weight: 700;
-  font-size: 1.1rem;
-  white-space: nowrap;
-  font-family: 'Outfit';
+.sidebar-logo {
+  height: 50px;
+  width: auto;
+  object-fit: contain;
+  max-width: 180px;
+  display: block;
+  margin: 0 auto;
+}
+
+.sidebar-logo.collapsed {
+  height: 36px;
+}
+
+@media (max-width: 768px) {
+  .sidebar-logo {
+    max-height: 56px;
+    height: auto;
+  }
 }
 
 .collapse-btn {
@@ -429,18 +430,13 @@ tr:last-child td {
 }
 
 .login-logo {
-  width: 48px;
-  height: 48px;
-  background-color: var(--accent-magenta);
-  color: white;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 1.5rem;
-  margin: 0 auto 1rem;
-  font-family: 'Outfit';
+  height: 80px;
+  width: auto;
+  margin-bottom: 20px;
+  object-fit: contain;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .login-header h1 {

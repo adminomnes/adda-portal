@@ -46,8 +46,11 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
       <aside className={`sidebar ${isCollapsed ? 'collapsed' : ''} ${isOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
           <div className="logo-container">
-            <div className="logo-icon">A</div>
-            {!isCollapsed && <span className="logo-text">ADDA Portal</span>}
+            <img
+              src="/intranet.png"
+              alt="ADDA Portal"
+              className={`sidebar-logo ${isCollapsed ? 'collapsed' : ''}`}
+            />
           </div>
           <button className="collapse-btn" onClick={toggleCollapsed}>
             <ChevronLeft size={20} style={{ transform: isCollapsed ? 'rotate(180deg)' : 'none' }} />
